@@ -13,6 +13,7 @@ class HandDetector():
         self.mpHands = mp.solutions.hands
         self.hands = self.mpHands.Hands(self.mode, self.maxHands, self.modelComplexity, self.detectionConfidence, self.trackConfidence)
         self.mpDraw = mp.solutions.drawing_utils
+        self.tipIds = [4, 8, 12, 16, 20]
 
 
 
@@ -33,7 +34,7 @@ class HandDetector():
 
     def findPosition(self, img, handNumber = 0, draw = True):
           
-        lmList = []
+        self.landMarkList = []
         if self.results.multi_hand_landmarks:
             myHand = self.results.multi_hand_landmarks[handNumber]
 
@@ -41,12 +42,33 @@ class HandDetector():
                 h, w, c = img.shape
                 center_x, center_y = int(lm.x * w), int(lm.y * h)
                 #print(id, center_x, center_y)
-                lmList.append([id, center_x, center_y])
+                self.landMarkList.append([id, center_x, center_y])
                 if draw: 
                     cv2.circle(img, (center_x, center_y), 7, (255, 0, 0), cv2.FILLED)
         
         
-        return lmList
+        return self.landMarkList
+
+    def fingersUp(self):
+        fingers = []
+
+        # thumb detection (if point 4 is on the right of the point 3, it will be assumed as close)
+        id = 0
+        if self.landMarkList[self.tipIds[id]][1] > self.landMarkList[self.tipIds[id] - 1][1]:
+            fingers.append(1)
+        else:
+            fingers.append(0)
+
+        # detect if the thumb is open or not is not like other fingers, so we start from the second one
+        for id in range(1, 5):
+            # on mediapipe's website there are a picture with the number of every part of the hand, so you can understand
+            if self.landMarkList[self.tipIds[id]][2] < self.landMarkList[self.tipIds[id] - 2][2]:
+                fingers.append(1)
+            else:
+                fingers.append(0)
+
+        return fingers
+
 
 
                 
